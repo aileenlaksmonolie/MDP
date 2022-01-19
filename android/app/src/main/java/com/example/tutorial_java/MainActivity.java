@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     };
 
+
     // Create a BroadcastReceiver for BLUETOOTH pairing
     private BroadcastReceiver mBroadcastReceiver4 = new BroadcastReceiver() {
         @Override
@@ -176,7 +177,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             enableDisableBT(switchState);
             }
             });
-
 
 
         //discoverable button method
