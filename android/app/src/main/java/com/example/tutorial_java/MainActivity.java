@@ -89,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     };
 
+    // Create a BroadcastReceiver for BLUETOOTH searching
     private BroadcastReceiver mBroadcastReceiver3 = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -109,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     };
 
+    // Create a BroadcastReceiver for BLUETOOTH pairing
     private BroadcastReceiver mBroadcastReceiver4 = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -131,7 +133,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     Log.d(TAG, "BroadcastReceiver : BOND_NONE");
                     Toast.makeText(getApplicationContext(), "Disconnected",Toast.LENGTH_LONG).show();
                 }
-
             }
         }
     };
@@ -161,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         mBTDevices = new ArrayList<>();
         LvNewDevices.setOnItemClickListener(MainActivity.this);
 
+
         //Broadcasts when bond state changes (ie : pairing)
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
         registerReceiver(mBroadcastReceiver4, filter);
@@ -174,7 +176,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             enableDisableBT(switchState);
             }
             });
-
 
 
 
@@ -256,6 +257,25 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
 
+    //pairing function
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        //first cancel discovery because its memory intensive.
+        mBluetoothAdapter.cancelDiscovery();
+        String deviceName = mBTDevices.get(i).getName();
+        String deviceAddress = mBTDevices.get(i).getAddress();
+
+        Log.d(TAG, "onItemClick : deviceName = "+ deviceName);
+        Log.d(TAG, "onItemClick : deviceAddress = "+ deviceAddress);
+
+        //create the bond
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            Log.d(TAG, "Trying to pair with" + deviceName);
+            mBTDevices.get(i).createBond();
+        }
+    }
+
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void checkBTPermissions() {
         if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
@@ -269,24 +289,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         }
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        //first cancel discoveryecause its verymemory intensive.
-        mBluetoothAdapter.cancelDiscovery();
-        String deviceName = mBTDevices.get(i).getName();
-        String deviceAddress = mBTDevices.get(i).getAddress();
 
-        Log.d(TAG, "onItemClick : deviceName = "+ deviceName);
-        Log.d(TAG, "onItemClick : deviceAddress = "+ deviceAddress);
-
-        //create the bond.
-        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
-            Log.d(TAG, "Trying to pair with" + deviceName);
-            mBTDevices.get(i).createBond();
-        }
-
-
-    }
 }
 
 
