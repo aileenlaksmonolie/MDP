@@ -1,25 +1,37 @@
 package com.example.tutorial_java;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
     BluetoothAdapter mBluetoothAdapter;
+    Switch bluetoothSwitch;
+    Button discoverableButton;
+    public ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
+    public DeviceListAdapter mDeviceListAdapter;
+    ListView LvNewDevices;
+
 
     // Create a BroadcastReceiver for ON/OFF BLUETOOTH
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
@@ -76,12 +88,31 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private BroadcastReceiver mBroadcastReceiver3 = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            Log.d(TAG, "onReceive: ACTION FOUND");
+
+            if (action.equals(BluetoothDevice.ACTION_FOUND)){
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                mBTDevices.add(device);
+                Log.d(TAG, "onReceive:" + device.getName() + ":" + device.getAddress());
+                mDeviceListAdapter = new DeviceListAdapter(context, R.layout.device_adapter_view, mBTDevices);
+                LvNewDevices.setAdapter(mDeviceListAdapter);
+            }
+        }
+    };
+
 
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy: called.");
         super.onDestroy();
         unregisterReceiver(mBroadcastReceiver1);
+        unregisterReceiver(mBroadcastReceiver2);
+        unregisterReceiver(mBroadcastReceiver3);
+
     }
 
     @Override
@@ -89,13 +120,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Bluetooth switch
-        Switch bluetoothSwitch = (Switch) findViewById(R.id.bluetoothSwitch);
-        Button discoverableButton = (Button) findViewById(R.id.discoverableButton);
 
-
-        //bluetooth Adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        bluetoothSwitch = (Switch) findViewById(R.id.bluetoothSwitch);
+        discoverableButton = (Button) findViewById(R.id.discoverableButton);
+        LvNewDevices = (ListView) findViewById(R.id.discoverableDevicesList);
+        mBTDevices = new ArrayList<>();
+
 
         //Bluetooth on/off switch method
         bluetoothSwitch.setOnClickListener(new View.OnClickListener(){
@@ -108,32 +139,20 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
         //discoverable button method
         discoverableButton.setOnClickListener(new View.OnClickListener(){
+            @RequiresApi(api = Build.VERSION_CODES.M)
             @Override
             public void onClick(View view){
                 enableDiscoverable();
+                btnDiscover();
             }
         });
 
     }
 
-
-
-    public void enableDiscoverable(){
-
-            Log.d(TAG, "Making device discoverable for 300 seconds");
-            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(discoverableIntent);
-
-            IntentFilter intentFilter = new IntentFilter(mBluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
-            registerReceiver(mBroadcastReceiver2, intentFilter);
-    }
-
-
-
+    //enable bluetooth method
     public void enableDisableBT(Boolean switchState) {
         if(mBluetoothAdapter==null){
             Log.d(TAG,"enableDisableBT : does not have BT capabilities.");
@@ -156,8 +175,64 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //enable discoverable method
+    public void enableDiscoverable(){
 
+            Log.d(TAG, "Making device discoverable for 300 seconds");
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+
+            IntentFilter intentFilter = new IntentFilter(mBluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+            registerReceiver(mBroadcastReceiver2, intentFilter);
+    }
+
+
+
+    //enable searching unpaired device method
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public void btnDiscover(){
+        Log.d(TAG, "BtnDiscover : Looking for unpair devices.");
+
+        if (mBluetoothAdapter.isDiscovering()){
+            mBluetoothAdapter.cancelDiscovery();
+            Log.d(TAG, "BtnDiscover : cancelling discovery.");
+
+            //checkBTPermissions, if it's greater than lollipop
+            checkBTPermissions();
+            mBluetoothAdapter.startDiscovery();
+
+            IntentFilter discoverDevicesIntent = new IntentFilter((BluetoothDevice.ACTION_FOUND));
+            registerReceiver(mBroadcastReceiver3, discoverDevicesIntent);
+
+        }
+        if (!mBluetoothAdapter.isDiscovering()){
+            Log.d(TAG, "BtnDiscover : searching.");
+            //checkBTPermissions, if it's greater than lollipop
+            checkBTPermissions();
+            mBluetoothAdapter.startDiscovery();
+            IntentFilter discoverDevicesIntent = new IntentFilter((BluetoothDevice.ACTION_FOUND));
+            registerReceiver(mBroadcastReceiver3, discoverDevicesIntent);
+        }
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void checkBTPermissions() {
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
+            int permissionCheck = this.checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
+            permissionCheck += this.checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
+            if (permissionCheck != 0) {
+                this.requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1001); //Any number
+            }
+        }else{
+            Log.d(TAG, "checkBTPermissions: No need to check permissions. SDK version < LOLLIPOP.");
+        }
+    }
 }
+
+
 
 
 
