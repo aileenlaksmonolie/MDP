@@ -9,12 +9,26 @@
 
     <Switch
         android:id="@+id/bluetoothSwitch"
-        android:layout_width="145dp"
-        android:layout_height="77dp"
-        android:layout_marginTop="98dp"
-        android:layout_marginEnd="63dp"
+        android:layout_width="150dp"
+        android:layout_height="54dp"
+        android:layout_marginTop="176dp"
         android:minHeight="48dp"
         android:text="Bluetooth"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.853"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/discoverableButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Discoverable"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.849"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bluetoothSwitch"
+        app:layout_constraintVertical_bias="0.033" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
